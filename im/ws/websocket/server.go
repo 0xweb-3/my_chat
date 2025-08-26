@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -9,6 +10,8 @@ import (
 )
 
 type Server struct {
+	routes map[string]HandlerFunc // 记录对应的路由
+
 	addr     string
 	upgrader websocket.Upgrader
 	logx.Logger
@@ -16,6 +19,7 @@ type Server struct {
 
 func NewServer(addr string) *Server {
 	return &Server{
+		routes:   make(map[string]HandlerFunc), // 初始化一下
 		addr:     addr,
 		upgrader: websocket.Upgrader{},
 		Logger:   logx.WithContext(context.Background()),
@@ -23,7 +27,22 @@ func NewServer(addr string) *Server {
 }
 
 func (s *Server) ServerWs(w http.ResponseWriter, r *http.Request) {
+	// 处理运行过程中可能抛出的系统性错误
+	defer func() {
+		if r := recover(); r != nil {
+			s.Errorf("server handler ws recover err %v", r)
+		}
+	}()
 
+	// 得到连接对象
+	conn, err := s.upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		s.Errorf("upgrade err %v", err)
+		return
+	}
+
+	// 根据连接对象执行任务处理
+	go s.handlerConn(conn)
 }
 
 func (s *Server) Start() {
@@ -34,4 +53,42 @@ func (s *Server) Start() {
 
 func (s *Server) Stop() {
 	fmt.Println("停止websocket服务。。。。")
+}
+
+// 根据连接对象执行任务处理
+func (s *Server) handlerConn(conn *websocket.Conn) {
+	for { // 避免执行一次处理就完毕
+		// 获取请求消息
+		_, msg, err := conn.ReadMessage()
+		if err != nil {
+			s.Errorf("websocket conn read message err %v", err)
+			// todo：关闭连接
+			return
+		}
+
+		//使用goroutine消息是并发处理的 → 可能导致顺序错乱（客户端按顺序发的消息，处理顺序就无法保证）。
+		//如果客户端发很多消息，可能会短时间内启动大量 goroutine，占用资源。
+
+		var message Message
+		if err = json.Unmarshal(msg, &message); err != nil {
+			s.Errorf("json unmarshal err %v, msg %v", err, string(msg))
+			// todo: 关闭连接
+			return
+		}
+
+		// 根据请求中的method分发路由并执行
+		if handler, ok := s.routes[message.Method]; ok {
+			handler(s, conn, &message)
+		} else {
+			// 没有对应处理方式
+			conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("不存在执行的方法%v请检查", message.Method)))
+		}
+	}
+}
+
+// 将路由注册进来
+func (s *Server) AddRoutes(rs []Route) {
+	for _, r := range rs {
+		s.routes[r.Method] = r.Handler
+	}
 }

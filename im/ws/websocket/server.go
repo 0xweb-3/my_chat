@@ -177,3 +177,32 @@ func (s *Server) AddRoutes(rs []Route) {
 		s.routes[r.Method] = r.Handler
 	}
 }
+
+// 通过用户ID发送消息
+func (s *Server) SendByUserId(msg any, sendIds ...string) error {
+	if len(sendIds) == 0 {
+		return nil
+	}
+
+	return s.Send(msg, s.GetConns(sendIds...)...)
+}
+
+// 根据连接对象发送消息
+func (s *Server) Send(msg any, conns ...*websocket.Conn) error {
+	if len(conns) == 0 {
+		return nil
+	}
+
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+
+	// 投递到每个连接
+	for _, conn := range conns {
+		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+			return err
+		}
+	}
+	return nil
+}

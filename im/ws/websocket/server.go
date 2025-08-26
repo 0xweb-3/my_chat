@@ -7,10 +7,19 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/zeromicro/go-zero/core/logx"
 	"net/http"
+	"sync"
 )
 
 type Server struct {
+	sync.RWMutex // 保证连接对象在使用过程中是线程安全的
+
 	routes map[string]HandlerFunc // 记录对应的路由
+
+	// 连接对象的存储
+	connToUser map[*websocket.Conn]string // 实际连接对象到用户
+	userToConn map[string]*websocket.Conn // 用户到连接对象
+
+	authentication Authentication
 
 	addr     string
 	upgrader websocket.Upgrader
@@ -22,7 +31,13 @@ func NewServer(addr string) *Server {
 		routes:   make(map[string]HandlerFunc), // 初始化一下
 		addr:     addr,
 		upgrader: websocket.Upgrader{},
-		Logger:   logx.WithContext(context.Background()),
+
+		// 对连接对象初始化
+		connToUser: make(map[*websocket.Conn]string),
+		userToConn: make(map[string]*websocket.Conn),
+
+		Logger:         logx.WithContext(context.Background()),
+		authentication: new(authentication),
 	}
 }
 
@@ -55,6 +70,76 @@ func (s *Server) Stop() {
 	fmt.Println("停止websocket服务。。。。")
 }
 
+// 添加连接对象
+func (s *Server) addConn(conn *websocket.Conn, req *http.Request) {
+	uid := s.authentication.UserId(req) // 获取用户uid
+
+	s.RWMutex.Lock()
+	defer s.RWMutex.Unlock()
+
+	s.connToUser[conn] = uid
+	s.userToConn[uid] = conn
+}
+
+func (s *Server) GetConn(uid string) *websocket.Conn {
+	s.RWMutex.RLock()
+	defer s.RWMutex.Unlock()
+	return s.userToConn[uid]
+}
+
+func (s *Server) GetConns(uids ...string) []*websocket.Conn {
+	if len(uids) == 0 {
+		return nil
+	}
+
+	s.RWMutex.RLock()
+	defer s.RWMutex.RUnlock()
+
+	res := make([]*websocket.Conn, 0, len(uids))
+	for _, uid := range uids {
+		res = append(res, s.userToConn[uid])
+	}
+	return res
+}
+
+func (s *Server) GetUsers(conns ...*websocket.Conn) []string {
+	s.RWMutex.RLock()
+	defer s.RWMutex.RUnlock()
+
+	var res []string
+	if len(conns) == 0 {
+		// 获取全部
+		res = make([]string, 0, len(s.connToUser))
+		for _, uid := range s.connToUser {
+			res = append(res, uid)
+		}
+	} else {
+		// 获取部分
+		res = make([]string, 0, len(conns))
+		for _, conn := range conns {
+			res = append(res, s.connToUser[conn])
+		}
+	}
+
+	return res
+}
+
+// 关闭连接
+func (s *Server) Close(conn *websocket.Conn) {
+	uid := s.connToUser[conn]
+
+	err := conn.Close()
+	if err != nil {
+		s.Errorf("close websocket conn, uid=%s, err %v", uid, err)
+	}
+	s.RWMutex.Lock()
+	defer s.RWMutex.RUnlock()
+
+	delete(s.connToUser, conn)
+	delete(s.userToConn, uid)
+
+}
+
 // 根据连接对象执行任务处理
 func (s *Server) handlerConn(conn *websocket.Conn) {
 	for { // 避免执行一次处理就完毕
@@ -62,7 +147,7 @@ func (s *Server) handlerConn(conn *websocket.Conn) {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			s.Errorf("websocket conn read message err %v", err)
-			// todo：关闭连接
+			s.Close(conn)
 			return
 		}
 
@@ -72,7 +157,7 @@ func (s *Server) handlerConn(conn *websocket.Conn) {
 		var message Message
 		if err = json.Unmarshal(msg, &message); err != nil {
 			s.Errorf("json unmarshal err %v, msg %v", err, string(msg))
-			// todo: 关闭连接
+			s.Close(conn)
 			return
 		}
 

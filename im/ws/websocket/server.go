@@ -11,14 +11,14 @@ import (
 )
 
 type Server struct {
+	patten       string
 	sync.RWMutex // 保证连接对象在使用过程中是线程安全的
 
 	routes map[string]HandlerFunc // 记录对应的路由
 
 	// 连接对象的存储
-	connToUser map[*websocket.Conn]string // 实际连接对象到用户
-	userToConn map[string]*websocket.Conn // 用户到连接对象
-
+	connToUser     map[*websocket.Conn]string // 实际连接对象到用户
+	userToConn     map[string]*websocket.Conn // 用户到连接对象
 	authentication Authentication
 
 	addr     string
@@ -26,7 +26,9 @@ type Server struct {
 	logx.Logger
 }
 
-func NewServer(addr string) *Server {
+func NewServer(addr string, opts ...ServerOptions) *Server {
+	opt := newServerOptions(opts...)
+
 	return &Server{
 		routes:   make(map[string]HandlerFunc), // 初始化一下
 		addr:     addr,
@@ -37,7 +39,8 @@ func NewServer(addr string) *Server {
 		userToConn: make(map[string]*websocket.Conn),
 
 		Logger:         logx.WithContext(context.Background()),
-		authentication: new(authentication),
+		authentication: opt.Authentication,
+		patten:         opt.patten,
 	}
 }
 
@@ -56,12 +59,58 @@ func (s *Server) ServerWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 根据连接对象执行任务处理
+	// 连接的鉴权
+	if !s.authentication.Auth(w, r) {
+		conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("不具备请求权限")))
+		return
+	}
+
+	// 记录连接通道
+	s.addConn(conn, r)
+
+	// 对连接进行处理
 	go s.handlerConn(conn)
 }
 
+// 根据连接对象执行任务处理
+func (s *Server) handlerConn(conn *websocket.Conn) {
+	for { // 避免执行一次处理就完毕
+		// 获取请求消息
+		_, msg, err := conn.ReadMessage()
+		if err != nil {
+			s.Errorf("websocket conn read message err %v", err)
+			s.Close(conn)
+			return
+		}
+
+		//使用goroutine消息是并发处理的 → 可能导致顺序错乱（客户端按顺序发的消息，处理顺序就无法保证）。
+		//如果客户端发很多消息，可能会短时间内启动大量 goroutine，占用资源。
+		var message Message
+		if err = json.Unmarshal(msg, &message); err != nil {
+			s.Errorf("json unmarshal err %v, msg %v", err, string(msg))
+			s.Close(conn)
+			return
+		}
+
+		// 根据请求中的method分发路由并执行
+		if handler, ok := s.routes[message.Method]; ok {
+			handler(s, conn, &message)
+		} else {
+			// 没有对应处理方式
+			conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("不存在执行的方法%v请检查", message.Method)))
+		}
+	}
+}
+
+// 将路由注册进来
+func (s *Server) AddRoutes(rs []Route) {
+	for _, r := range rs {
+		s.routes[r.Method] = r.Handler
+	}
+}
+
 func (s *Server) Start() {
-	http.HandleFunc("/ws", s.ServerWs)
+	http.HandleFunc(s.patten, s.ServerWs)
 	s.Info("启动websocket。。。。。。", s.addr)
 	s.Info(http.ListenAndServe(s.addr, nil))
 }
@@ -137,45 +186,6 @@ func (s *Server) Close(conn *websocket.Conn) {
 
 	delete(s.connToUser, conn)
 	delete(s.userToConn, uid)
-
-}
-
-// 根据连接对象执行任务处理
-func (s *Server) handlerConn(conn *websocket.Conn) {
-	for { // 避免执行一次处理就完毕
-		// 获取请求消息
-		_, msg, err := conn.ReadMessage()
-		if err != nil {
-			s.Errorf("websocket conn read message err %v", err)
-			s.Close(conn)
-			return
-		}
-
-		//使用goroutine消息是并发处理的 → 可能导致顺序错乱（客户端按顺序发的消息，处理顺序就无法保证）。
-		//如果客户端发很多消息，可能会短时间内启动大量 goroutine，占用资源。
-
-		var message Message
-		if err = json.Unmarshal(msg, &message); err != nil {
-			s.Errorf("json unmarshal err %v, msg %v", err, string(msg))
-			s.Close(conn)
-			return
-		}
-
-		// 根据请求中的method分发路由并执行
-		if handler, ok := s.routes[message.Method]; ok {
-			handler(s, conn, &message)
-		} else {
-			// 没有对应处理方式
-			conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("不存在执行的方法%v请检查", message.Method)))
-		}
-	}
-}
-
-// 将路由注册进来
-func (s *Server) AddRoutes(rs []Route) {
-	for _, r := range rs {
-		s.routes[r.Method] = r.Handler
-	}
 }
 
 // 通过用户ID发送消息

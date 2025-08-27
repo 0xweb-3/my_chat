@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/zeromicro/go-zero/core/conf"
 	"my_chat/im/ws/internal/config"
+	"my_chat/im/ws/internal/handler"
 	"my_chat/im/ws/internal/svc"
 	"my_chat/im/ws/websocket"
 )
@@ -21,9 +22,12 @@ func main() {
 	if err := c.SetUp(); err != nil {
 		panic(err)
 	}
-
-	svc.NewServiceContext(c)
 	srv := websocket.NewServer(c.ListenOn)
+	defer srv.Stop()
+
+	ctx := svc.NewServiceContext(c)
+	handler.RegisterHandlers(srv, ctx) // 把所有路由加载进来
+
 	fmt.Println("start websocket server at", c.ListenOn, "....")
 	srv.Start()
 }

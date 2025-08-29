@@ -12,6 +12,8 @@ func Online(svc *svc.ServiceContext) websocketx.HandlerFunc {
 		uids := srv.GetUsers()
 		u := srv.GetUsers(conn) // 该连接对应的用户
 		err := srv.Send(websocketx.NewMessage(u[0], uids), conn)
-		srv.Info("err", err)
+		if err != nil {
+			srv.Info("err", err)
+		}
 	}
 }

@@ -1,4 +1,39 @@
+# my_chat
+
+使用golang实现的websocket服务端
+
+## go_zero
+
+[go-zero官网](https://go-zero.dev)
+
+### 安装
+
+```shell
+go install github.com/zeromicro/go-zero/tools/goctl@latest
+goctl --version
+```
+
+### 快速构建api/rpc服务
+
+```shell
+cd demo && mkdir userdemo && cd userdemo
+
+# 一般不这样使用， 而是应该先创建好rpc.proto或api.api
+goctl rpc new rpc
+goctl api new api
+```
+
+* 构建proto文件`demo/userdemo/rpc/user.proto`
+* 构建api文件`demo/userdemo/api/user.api`
+```shell
+goctl rpc protoc user.proto  --go_out=.  --go-grpc_out=.  --zrpc_out=.
+```
+
+
 ## 实现的步骤
+
+按照下面tag版本可以一步步观察实现步骤，tag之间对比观察更明显
+建议将tag拉取到本地，用IDE工具进行版本之间对比参照
 
 1. v1.0.0 完成im基本服务框架结构搭建
 2. v2.0.0 完成消息的路由分发
@@ -6,4 +41,8 @@
 4. v4.0.0 消息的发送
 5. v5.0.0 使用options代码风格的优化、连接的鉴权、记录连接通道
 6. v6.0.0 接入消息发送,路由加载
+7. v7.0.0 测试go-zero使用
+8. 实现user rpc服务
+8. v8.0.0 实现user web服务
+9. v9.0.0 实现im服务用户登入连接，鉴权
 

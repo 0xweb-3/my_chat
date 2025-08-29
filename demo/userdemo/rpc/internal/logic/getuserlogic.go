@@ -24,7 +24,10 @@ func NewGetUserLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetUserLo
 }
 
 func (l *GetUserLogic) GetUser(in *user.GetUserReq) (*user.GetUserResp, error) {
-	// todo: add your logic here and delete this line
 
-	return &user.GetUserResp{}, nil
+	return &user.GetUserResp{
+		Id:    in.GetId(),
+		Name:  "xin",
+		Phone: "17612724518",
+	}, nil
 }

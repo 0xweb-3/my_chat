@@ -27,6 +27,7 @@ goctl api new api
 * 构建api文件`demo/userdemo/api/user.api`
 ```shell
 goctl rpc protoc user.proto  --go_out=.  --go-grpc_out=.  --zrpc_out=.
+goctl api go -api user.api -dir . -style gozero
 ```
 
 

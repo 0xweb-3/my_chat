@@ -43,6 +43,9 @@ goctl api go -api user.api -dir . -style gozero
 5. v5.0.0 使用options代码风格的优化、连接的鉴权、记录连接通道
 6. v6.0.0 接入消息发送,路由加载
 7. v7.0.0 测试go-zero使用
+   * v7.0.1 rpc服务能启动，并访问
+   * v7.0.2 api服务实现并能启动访问
+   * 
 8. 实现user rpc服务
 8. v8.0.0 实现user web服务
 9. v9.0.0 实现im服务用户登入连接，鉴权

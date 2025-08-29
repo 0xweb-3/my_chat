@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"my_chat/demo/userdemo/rpc/userclient"
 
 	"my_chat/demo/userdemo/api/internal/svc"
 	"my_chat/demo/userdemo/api/internal/types"
@@ -24,10 +25,16 @@ func NewGetUserLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetUserLo
 }
 
 func (l *GetUserLogic) GetUser(req *types.UserReq) (resp *types.UserResp, err error) {
-
+	user, err := l.svcCtx.GetUser(l.ctx, &userclient.GetUserReq{
+		Id: "122",
+	})
+	if err != nil {
+		l.Error(err)
+		return nil, err
+	}
 	return &types.UserResp{
-		Id:    "1111",
-		Name:  "xin",
-		Phone: "",
+		Id:    user.GetId(),
+		Name:  user.GetName(),
+		Phone: user.GetPhone(),
 	}, nil
 }

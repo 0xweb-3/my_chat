@@ -1,36 +1,42 @@
 syntax = "v1"
 
-// goctl api go -api user.api -dir . -style gozero
 info (
-	title:   "用户服务api"
-	desc:    "用户服务api"
-	author:  "type author here"
+	title:   "user api"
+	desc:    "type desc here"
+	author:  "xin"
 	email:   "type email here"
 	version: "type version here"
 )
 
-type (
-	UserReq {
-		Id string `json:"id"`
-	}
-	UserResp {
-		Id    string `json:"id"`
-		Name  string `json:"name"`
-		Phone string `json:"phone"`
-	}
+import (
+	"domain.api"
 )
 
-// 定义user api服务描述
-service User {
-	@handler getUser
-	get /user (UserReq) returns (UserResp)
+// -------------- user api v1 --------------
+// no need login
+@server (
+	prefix: v1/user
+	group:  user
+)
+service user {
+	@doc "用户注册"
+	@handler register
+	post /register (RegisterReq) returns (RegisterResp)
+
+	@doc "用户登入"
+	@handler login
+	post /login (LoginReq) returns (LoginResp)
 }
 
+//need login
 @server (
-	middleware: LoginVerification
+	prefix: v1/user
+	group:  user
+	jwt:    JwtAuth
 )
-service User {
-	@handler getUserInfo
-	get /userinfo (UserReq) returns (UserResp)
+service user {
+	@doc "获取用户信息"
+	@handler detail
+	get /user (UserInfoReq) returns (UserInfoResp)
 }
 

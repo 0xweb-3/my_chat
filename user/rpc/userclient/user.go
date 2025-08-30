@@ -14,17 +14,24 @@ import (
 )
 
 type (
-	CreateUserReq  = user.CreateUserReq
-	CreateUserResp = user.CreateUserResp
-	GetUserReq     = user.GetUserReq
-	GetUserResp    = user.GetUserResp
-	Request        = user.Request
-	Response       = user.Response
+	FindUserReq     = user.FindUserReq
+	FindUserResp    = user.FindUserResp
+	GetUserInfoReq  = user.GetUserInfoReq
+	GetUserInfoResp = user.GetUserInfoResp
+	LoginReq        = user.LoginReq
+	LoginResp       = user.LoginResp
+	RegisterReq     = user.RegisterReq
+	RegisterResp    = user.RegisterResp
+	Request         = user.Request
+	Response        = user.Response
+	UserEntity      = user.UserEntity
 
 	User interface {
-		GetUser(ctx context.Context, in *GetUserReq, opts ...grpc.CallOption) (*GetUserResp, error)
-		CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*CreateUserResp, error)
 		Ping(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+		Login(ctx context.Context, in *LoginReq, opts ...grpc.CallOption) (*LoginResp, error)
+		Register(ctx context.Context, in *RegisterReq, opts ...grpc.CallOption) (*RegisterResp, error)
+		GetUserInfo(ctx context.Context, in *GetUserInfoReq, opts ...grpc.CallOption) (*GetUserInfoResp, error)
+		FindUser(ctx context.Context, in *FindUserReq, opts ...grpc.CallOption) (*FindUserResp, error)
 	}
 
 	defaultUser struct {
@@ -38,17 +45,27 @@ func NewUser(cli zrpc.Client) User {
 	}
 }
 
-func (m *defaultUser) GetUser(ctx context.Context, in *GetUserReq, opts ...grpc.CallOption) (*GetUserResp, error) {
-	client := user.NewUserClient(m.cli.Conn())
-	return client.GetUser(ctx, in, opts...)
-}
-
-func (m *defaultUser) CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*CreateUserResp, error) {
-	client := user.NewUserClient(m.cli.Conn())
-	return client.CreateUser(ctx, in, opts...)
-}
-
 func (m *defaultUser) Ping(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
 	client := user.NewUserClient(m.cli.Conn())
 	return client.Ping(ctx, in, opts...)
+}
+
+func (m *defaultUser) Login(ctx context.Context, in *LoginReq, opts ...grpc.CallOption) (*LoginResp, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.Login(ctx, in, opts...)
+}
+
+func (m *defaultUser) Register(ctx context.Context, in *RegisterReq, opts ...grpc.CallOption) (*RegisterResp, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.Register(ctx, in, opts...)
+}
+
+func (m *defaultUser) GetUserInfo(ctx context.Context, in *GetUserInfoReq, opts ...grpc.CallOption) (*GetUserInfoResp, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.GetUserInfo(ctx, in, opts...)
+}
+
+func (m *defaultUser) FindUser(ctx context.Context, in *FindUserReq, opts ...grpc.CallOption) (*FindUserResp, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.FindUser(ctx, in, opts...)
 }

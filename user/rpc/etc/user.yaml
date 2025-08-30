@@ -1,6 +1,23 @@
 Name: user.rpc
-ListenOn: 0.0.0.0:8080
+ListenOn: 0.0.0.0:10001
 Etcd:
-  Hosts:
-  - 127.0.0.1:2379
+  Hosts: # 如果打包成容器这里不能使用默认127.0.0.1
+    - 127.0.0.1:2389
   Key: user.rpc
+
+Cache:
+  - Host: 192.168.21.5:6499
+    Type: node
+    pass:
+
+Redisx:
+  Host: 192.168.21.5:6499
+  Type: node
+  pass:
+
+Mysql:
+  DataSource: root:xin000000@tcp(192.168.21.5:3311)/user?charset=utf8mb4&parseTime=True&loc=Local
+
+Jwt:
+  AccessSecret: 3GpqJy2cBS4UuVXFRGArdeVLt4pyQypM
+  AccessExpire: 8640000

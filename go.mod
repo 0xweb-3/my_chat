@@ -3,8 +3,12 @@ module my_chat
 go 1.22.5
 
 require (
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/gorilla/websocket v1.5.3
+	github.com/pkg/errors v0.9.1
+	github.com/sony/sonyflake v1.3.0
 	github.com/zeromicro/go-zero v1.9.0
+	golang.org/x/crypto v0.33.0
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.36.5
 )

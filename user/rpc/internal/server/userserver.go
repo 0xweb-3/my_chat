@@ -23,17 +23,27 @@ func NewUserServer(svcCtx *svc.ServiceContext) *UserServer {
 	}
 }
 
-func (s *UserServer) GetUser(ctx context.Context, in *user.GetUserReq) (*user.GetUserResp, error) {
-	l := logic.NewGetUserLogic(ctx, s.svcCtx)
-	return l.GetUser(in)
-}
-
-func (s *UserServer) CreateUser(ctx context.Context, in *user.CreateUserReq) (*user.CreateUserResp, error) {
-	l := logic.NewCreateUserLogic(ctx, s.svcCtx)
-	return l.CreateUser(in)
-}
-
 func (s *UserServer) Ping(ctx context.Context, in *user.Request) (*user.Response, error) {
 	l := logic.NewPingLogic(ctx, s.svcCtx)
 	return l.Ping(in)
+}
+
+func (s *UserServer) Login(ctx context.Context, in *user.LoginReq) (*user.LoginResp, error) {
+	l := logic.NewLoginLogic(ctx, s.svcCtx)
+	return l.Login(in)
+}
+
+func (s *UserServer) Register(ctx context.Context, in *user.RegisterReq) (*user.RegisterResp, error) {
+	l := logic.NewRegisterLogic(ctx, s.svcCtx)
+	return l.Register(in)
+}
+
+func (s *UserServer) GetUserInfo(ctx context.Context, in *user.GetUserInfoReq) (*user.GetUserInfoResp, error) {
+	l := logic.NewGetUserInfoLogic(ctx, s.svcCtx)
+	return l.GetUserInfo(in)
+}
+
+func (s *UserServer) FindUser(ctx context.Context, in *user.FindUserReq) (*user.FindUserResp, error) {
+	l := logic.NewFindUserLogic(ctx, s.svcCtx)
+	return l.FindUser(in)
 }

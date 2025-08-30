@@ -10,7 +10,7 @@ import (
 
 type ServiceContext struct {
 	Config            config.Config
-	LoginVerification rest.Middleware
+	LoginVerification rest.Middleware // 中间件
 
 	userclient.User
 }
@@ -18,7 +18,7 @@ type ServiceContext struct {
 func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
 		Config:            c,
-		LoginVerification: middleware.NewLoginVerificationMiddleware().Handle,
+		LoginVerification: middleware.NewLoginVerificationMiddleware().Handle, // 中间件
 
 		User: userclient.NewUser(zrpc.MustNewClient(c.UserRpc)),
 	}

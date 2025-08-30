@@ -27,7 +27,7 @@ service User {
 }
 
 @server (
-	middleware: LoginVerification
+	middleware: LoginVerification // 这个就是中间件的定义
 )
 service User {
 	@handler getUserInfo

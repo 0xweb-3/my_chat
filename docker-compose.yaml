@@ -20,29 +20,28 @@ services:
     volumes:
       - etcd-data:/etcd-data
 
-#  redis:
-#    image: redis:7.2
-#    container_name: gozero-redis
-#    ports:
-#      - "6479:6379"
-#    volumes:
-#      - redis-data:/data
-#    command: [ "redis-websocket", "--appendonly", "yes" ]
-#
-#  mysql:
-#    image: mysql:5.7
-#    platform: linux/amd64
-#    environment:
-#      MYSQL_ROOT_PASSWORD: xin000000
-#      MYSQL_DATABASE: zero
-#      MYSQL_CHARSET: utf8mb4
-#      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
-#    ports:
-#      - "3310:3306"
-#    command: --character-set-websocket=utf8mb4 --collation-websocket=utf8mb4_unicode_ci
-#    volumes:
-#      - mysql-data:/var/lib/mysql
-#
+  redis:
+    image: redis:7.2
+    container_name: mychat-redis
+    ports:
+      - "6499:6379"
+    volumes:
+      - redis-data:/data
+    command: [ "redis-server", "--appendonly", "yes" ]
+
+  mysql:
+    image: mysql:5.7
+    platform: linux/amd64
+    container_name: mychat-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: xin000000
+      MYSQL_DATABASE: user
+    ports:
+      - "3311:3306"
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+
 #  mongodb:
 #    image: mongo:6.0
 #    container_name: gozero-mongodb
@@ -56,8 +55,8 @@ services:
 
 volumes:
   etcd-data:
-#  redis-data:
-#  mysql-data:
+  redis-data:
+  mysql-data:
 #  mongodb-data:
 #  kafka-data:
 #  zookeeper-data:

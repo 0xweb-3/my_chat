@@ -30,22 +30,29 @@ goctl rpc protoc user.proto  --go_out=.  --go-grpc_out=.  --zrpc_out=.
 goctl api go -api user.api -dir . -style gozero
 ```
 
+mysql数据库模型的构建
+```shell
+goctl model mysql ddl --src user.sql --dir "./models/" -c
+```
+```shell
+CREATE DATABASE `user` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+```
 
 ## 实现的步骤
 
 按照下面tag版本可以一步步观察实现步骤，tag之间对比观察更明显
 建议将tag拉取到本地，用IDE工具进行版本之间对比参照
 
-1. v1.0.0 完成im基本服务框架结构搭建
-2. v2.0.0 完成消息的路由分发
-3. v3.0.0 存储连接对象及设计鉴权
-4. v4.0.0 消息的发送
-5. v5.0.0 使用options代码风格的优化、连接的鉴权、记录连接通道
-6. v6.0.0 接入消息发送,路由加载
-7. v7.0.0 测试go-zero使用
-   * v7.0.1 rpc服务能启动，并访问
-   * v7.0.2 api服务实现并能启动访问
-   * 
+1. v1.0.0 完成im基本服务框架结构搭建 ✅
+2. v2.0.0 完成消息的路由分发 ✅
+3. v3.0.0 存储连接对象及设计鉴权 ✅
+4. v4.0.0 消息的发送 ✅
+5. v5.0.0 使用options代码风格的优化、连接的鉴权、记录连接通道 ✅
+6. v6.0.0 接入消息发送,路由加载 ✅
+7. v7.0.0 测试go-zero使用 ✅
+   * v7.0.1 rpc服务能启动，并访问 ✅
+   * v7.0.2 api服务实现并能启动访问 ✅
+   * v7.0.3 mysql数据读写操作
 8. 实现user rpc服务
 8. v8.0.0 实现user web服务
 9. v9.0.0 实现im服务用户登入连接，鉴权

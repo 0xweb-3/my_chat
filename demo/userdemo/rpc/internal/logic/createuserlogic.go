@@ -2,6 +2,10 @@ package logic
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
+	"my_chat/demo/userdemo/rpc/models"
+	"time"
 
 	"my_chat/demo/userdemo/rpc/internal/svc"
 	"my_chat/demo/userdemo/rpc/user"
@@ -24,7 +28,15 @@ func NewCreateUserLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Create
 }
 
 func (l *CreateUserLogic) CreateUser(in *user.CreateUserReq) (*user.CreateUserResp, error) {
-	// todo: add your logic here and delete this line
-
+	_, err := l.svcCtx.UserModel.Insert(l.ctx, &models.Users{
+		Id:       fmt.Sprintf("%v", time.Now().UnixMilli()),
+		Avatar:   "Avatar.jpg",
+		Name:     fmt.Sprintf("name-%v", time.Now().UnixMilli()),
+		Password: sql.NullString{},
+	})
+	if err != nil {
+		l.Errorf("CreateUser error:%v", err)
+		return nil, err
+	}
 	return &user.CreateUserResp{}, nil
 }

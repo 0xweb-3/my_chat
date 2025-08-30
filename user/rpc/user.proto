@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "./user";
+
+// 编译命令
+// goctl rpc protoc user.proto --go_out=. --go-grpc_out=. --zrpc_out=.
+
+service User {
+  rpc GetUser(GetUserReq) returns(GetUserResp);
+  rpc CreateUser(CreateUserReq) returns(CreateUserResp);
+  rpc Ping(Request) returns(Response);
+}
+
+message CreateUserReq {
+  string id = 1;
+  string name = 2;
+  string phone = 3;
+}
+
+message CreateUserResp {
+
+}
+
+message Request{}
+message Response{}
+
+message GetUserReq{
+  string id = 1;
+}
+
+message GetUserResp{
+  string id = 1;
+  string name = 2;
+  string phone = 3;
+}

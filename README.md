@@ -55,7 +55,6 @@ CREATE DATABASE `user` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
    * v7.0.3 api服务对rpc服务的调用 ✅
    * v7.0.4 mysql数据读写操作
    * v7.0.5 api中间件的使用
-8. 实现user rpc服务
-8. v8.0.0 实现user web服务
+8. v8.0.0 实现userrpc/web服务 
 9. v9.0.0 实现im服务用户登入连接，鉴权
 

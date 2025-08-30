@@ -1,0 +1,36 @@
+syntax = "v1"
+
+// goctl api go -api user.api -dir . -style gozero
+info (
+	title:   "用户服务api"
+	desc:    "用户服务api"
+	author:  "type author here"
+	email:   "type email here"
+	version: "type version here"
+)
+
+type (
+	UserReq {
+		Id string `json:"id"`
+	}
+	UserResp {
+		Id    string `json:"id"`
+		Name  string `json:"name"`
+		Phone string `json:"phone"`
+	}
+)
+
+// 定义user api服务描述
+service User {
+	@handler getUser
+	get /user (UserReq) returns (UserResp)
+}
+
+@server (
+	middleware: LoginVerification
+)
+service User {
+	@handler getUserInfo
+	get /userinfo (UserReq) returns (UserResp)
+}
+

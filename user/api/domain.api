@@ -1,0 +1,49 @@
+syntax = "v1"
+
+info(
+    title: "type title here"
+    desc: "type desc here"
+    author: "type author here"
+    email: "type email here"
+    version: "type version here"
+)
+
+type User {
+    Id       string `json:"id"`
+    Mobile   string `json:"mobile"`
+    Nickname string `json:"nickname"`
+    Sex      byte   `json:"sex"`
+    Avatar   string `json:"avatar"`
+}
+
+type (
+    RegisterReq {
+        Phone       string `json:"phone"`
+        Password    string `json:"password"`
+        Nickname    string `json:"nickname"`
+        Sex         byte   `json:"sex"`
+        Avatar      string `json:"avatar"`
+    }
+    RegisterResp {
+        Token   string `json:"token"`
+        Expire  int64  `json:"expire"`
+    }
+)
+
+type (
+    LoginReq {
+        Phone       string `json:"phone"`
+        Password    string `json:"password"`
+    }
+    LoginResp {
+        Token   string `json:"token"`
+        Expire  int64  `json:"expire"`
+    }
+)
+
+type (
+    UserInfoReq {}
+    UserInfoResp {
+        Info User `json:"info"`
+    }
+)

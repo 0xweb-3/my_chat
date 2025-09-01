@@ -62,6 +62,8 @@ func (s *Server) ServerWs(w http.ResponseWriter, r *http.Request) {
 	// 连接的鉴权
 	if !s.authentication.Auth(w, r) {
 		conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("不具备请求权限")))
+		// 权限不足应该自动断开连接
+		conn.Close()
 		return
 	}
 

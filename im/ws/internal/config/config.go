@@ -6,4 +6,8 @@ type Config struct {
 	service.ServiceConf // go-zero中的配置
 
 	ListenOn string
+
+	JwtAuth struct {
+		AccessSecret string
+	}
 }

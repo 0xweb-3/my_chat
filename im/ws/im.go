@@ -22,10 +22,10 @@ func main() {
 	if err := c.SetUp(); err != nil {
 		panic(err)
 	}
-	srv := websocket.NewServer(c.ListenOn)
+	ctx := svc.NewServiceContext(c)
+	srv := websocket.NewServer(c.ListenOn, websocket.WithServerAuthentication(handler.NewJwtAuth(ctx)))
 	defer srv.Stop()
 
-	ctx := svc.NewServiceContext(c)
 	handler.RegisterHandlers(srv, ctx) // 把所有路由加载进来
 
 	fmt.Println("start websocket server at", c.ListenOn, "....")

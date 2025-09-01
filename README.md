@@ -57,7 +57,7 @@ CREATE DATABASE `user` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
    * v7.0.5 api中间件的使用
 8. v8.0.0 实现user rpc/web服务 
    * v8.0.1 增加rpc用户手机号、密码加密、雪花id、jwt、注册登录的业务
-   * v8.0.1 完善user api服务、完成登录注册功能、用户详情
+   * v8.0.2 完善user api服务、完成登录注册功能、用户详情
    * 优化响应输出
 9. v9.0.0 实现im服务用户登入连接，鉴权
 

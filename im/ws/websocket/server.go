@@ -21,6 +21,8 @@ type Server struct {
 	userToConn     map[string]*HeartbeatConnection // 用户到连接对象
 	authentication Authentication
 
+	opt *serverOption
+
 	addr     string
 	upgrader websocket.Upgrader
 	logx.Logger
@@ -41,6 +43,7 @@ func NewServer(addr string, opts ...ServerOptions) *Server {
 		Logger:         logx.WithContext(context.Background()),
 		authentication: opt.Authentication,
 		patten:         opt.patten,
+		opt:            &opt,
 	}
 }
 
@@ -65,7 +68,7 @@ func (s *Server) ServerWs(w http.ResponseWriter, r *http.Request) {
 
 	// 连接的鉴权
 	if !s.authentication.Auth(w, r) {
-		conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("不具备请求权限")))
+		s.Send(&Message{FrameType: FrameData, Data: fmt.Sprintf("不具备请求权限")}, conn)
 		// 权限不足应该自动断开连接
 		conn.Close()
 		return
@@ -98,13 +101,27 @@ func (s *Server) handlerConn(conn *HeartbeatConnection) {
 			return
 		}
 
-		// 根据请求中的method分发路由并执行
-		if handler, ok := s.routes[message.Method]; ok {
-			handler(s, conn, &message)
-		} else {
-			// 没有对应处理方式
-			conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("不存在执行的方法%v请检查", message.Method)))
+		// 根据不同消息类型进行处理
+		switch message.FrameType {
+		case FramePing:
+			// 针对ping消息回复ping消息
+			s.Send(&Message{FrameType: FramePing}, conn)
+		case FrameData:
+			// 普通数据响应
+			if handler, ok := s.routes[message.Method]; ok {
+				handler(s, conn, &message)
+			} else {
+				s.Send(&Message{FrameType: FrameData, Data: fmt.Sprintf("不存在执行的方法%v请检查", message.Method)}, conn)
+			}
 		}
+
+		//// 根据请求中的method分发路由并执行
+		//if handler, ok := s.routes[message.Method]; ok {
+		//	handler(s, conn, &message)
+		//} else {
+		//	// 没有对应处理方式
+		//	conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("不存在执行的方法%v请检查", message.Method)))
+		//}
 	}
 }
 
@@ -131,6 +148,11 @@ func (s *Server) addConn(conn *HeartbeatConnection, req *http.Request) {
 
 	s.RWMutex.Lock()
 	defer s.RWMutex.Unlock()
+
+	// 避免重复登录，踢掉上一个连接
+	if c := s.userToConn[uid]; c != nil {
+		c.Close()
+	}
 
 	s.connToUser[conn] = uid
 	s.userToConn[uid] = conn
@@ -183,15 +205,17 @@ func (s *Server) GetUsers(conns ...*HeartbeatConnection) []string {
 func (s *Server) Close(conn *HeartbeatConnection) {
 	uid := s.connToUser[conn]
 
-	err := conn.Close()
-	if err != nil {
-		s.Errorf("close websocket conn, uid=%s, err %v", uid, err)
-	}
 	s.RWMutex.Lock()
 	defer s.RWMutex.RUnlock()
+	// 避免被关闭的连接再次关闭
+	if uid == "" {
+		return
+	}
 
 	delete(s.connToUser, conn)
 	delete(s.userToConn, uid)
+
+	conn.Close()
 }
 
 // 通过用户ID发送消息

@@ -8,6 +8,7 @@ import (
 	"my_chat/im/ws/internal/handler"
 	"my_chat/im/ws/internal/svc"
 	"my_chat/im/ws/websocket"
+	"time"
 )
 
 var configFile = flag.String("f", "im/ws/etc/dev/im.yaml", "the config file")
@@ -23,7 +24,10 @@ func main() {
 		panic(err)
 	}
 	ctx := svc.NewServiceContext(c)
-	srv := websocket.NewServer(c.ListenOn, websocket.WithServerAuthentication(handler.NewJwtAuth(ctx)))
+	srv := websocket.NewServer(
+		c.ListenOn,
+		websocket.WithServerAuthentication(handler.NewJwtAuth(ctx)),
+		websocket.WithServerMaxConnectionIdle(time.Second*10))
 	defer srv.Stop()
 
 	handler.RegisterHandlers(srv, ctx) // 把所有路由加载进来

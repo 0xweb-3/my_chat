@@ -9,14 +9,11 @@ import (
 
 type HeartbeatConnection struct {
 	idleMu sync.Mutex
-
 	*websocket.Conn
-	s *Server
-
+	s                 *Server
 	idle              time.Time     // 最后活跃时间
 	maxConnectionIdle time.Duration // 最大连接时间
-
-	done chan struct{}
+	done              chan struct{}
 }
 
 func NewHeartbeatConnection(s *Server, w http.ResponseWriter, r *http.Request) *HeartbeatConnection {
@@ -30,9 +27,12 @@ func NewHeartbeatConnection(s *Server, w http.ResponseWriter, r *http.Request) *
 		Conn:              c,
 		s:                 s,
 		idle:              time.Now(),
-		maxConnectionIdle: defaultMaxConnectionIdle,
+		maxConnectionIdle: s.opt.maxConnectionIdle,
 		done:              make(chan struct{}),
 	}
+
+	// 执行心跳检测
+	go conn.keepalive()
 
 	return conn
 }

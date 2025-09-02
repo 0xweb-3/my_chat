@@ -176,8 +176,8 @@ func (s *Server) GetUsers(conns ...*websocket.Conn) []string {
 }
 
 // 关闭连接
-func (s *Server) Close(conn *websocket.Conn) {
-	uid := s.connToUser[conn]
+func (s *Server) Close(conn *HeartbeatConnection) {
+	uid := s.connToUser[conn.Conn]
 
 	err := conn.Close()
 	if err != nil {
@@ -186,7 +186,7 @@ func (s *Server) Close(conn *websocket.Conn) {
 	s.RWMutex.Lock()
 	defer s.RWMutex.RUnlock()
 
-	delete(s.connToUser, conn)
+	delete(s.connToUser, conn.Conn)
 	delete(s.userToConn, uid)
 }
 

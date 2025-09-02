@@ -17,8 +17,8 @@ type Server struct {
 	routes map[string]HandlerFunc // 记录对应的路由
 
 	// 连接对象的存储
-	connToUser     map[*websocket.Conn]string // 实际连接对象到用户
-	userToConn     map[string]*websocket.Conn // 用户到连接对象
+	connToUser     map[*HeartbeatConnection]string // 实际连接对象到用户
+	userToConn     map[string]*HeartbeatConnection // 用户到连接对象
 	authentication Authentication
 
 	addr     string
@@ -35,8 +35,8 @@ func NewServer(addr string, opts ...ServerOptions) *Server {
 		upgrader: websocket.Upgrader{},
 
 		// 对连接对象初始化
-		connToUser: make(map[*websocket.Conn]string),
-		userToConn: make(map[string]*websocket.Conn),
+		connToUser: make(map[*HeartbeatConnection]string),
+		userToConn: make(map[string]*HeartbeatConnection),
 
 		Logger:         logx.WithContext(context.Background()),
 		authentication: opt.Authentication,
@@ -53,9 +53,13 @@ func (s *Server) ServerWs(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	// 得到连接对象
-	conn, err := s.upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		s.Errorf("upgrade err %v", err)
+	//conn, err := s.upgrader.Upgrade(w, r, nil)
+	//if err != nil {
+	//	s.Errorf("upgrade err %v", err)
+	//	return
+	//}
+	conn := NewHeartbeatConnection(s, w, r)
+	if conn == nil {
 		return
 	}
 
@@ -75,7 +79,7 @@ func (s *Server) ServerWs(w http.ResponseWriter, r *http.Request) {
 }
 
 // 根据连接对象执行任务处理
-func (s *Server) handlerConn(conn *websocket.Conn) {
+func (s *Server) handlerConn(conn *HeartbeatConnection) {
 	for { // 避免执行一次处理就完毕
 		// 获取请求消息
 		_, msg, err := conn.ReadMessage()
@@ -122,7 +126,7 @@ func (s *Server) Stop() {
 }
 
 // 添加连接对象
-func (s *Server) addConn(conn *websocket.Conn, req *http.Request) {
+func (s *Server) addConn(conn *HeartbeatConnection, req *http.Request) {
 	uid := s.authentication.UserId(req) // 获取用户uid
 
 	s.RWMutex.Lock()
@@ -132,13 +136,13 @@ func (s *Server) addConn(conn *websocket.Conn, req *http.Request) {
 	s.userToConn[uid] = conn
 }
 
-func (s *Server) GetConn(uid string) *websocket.Conn {
+func (s *Server) GetConn(uid string) *HeartbeatConnection {
 	s.RWMutex.RLock()
 	defer s.RWMutex.Unlock()
 	return s.userToConn[uid]
 }
 
-func (s *Server) GetConns(uids ...string) []*websocket.Conn {
+func (s *Server) GetConns(uids ...string) []*HeartbeatConnection {
 	if len(uids) == 0 {
 		return nil
 	}
@@ -146,14 +150,14 @@ func (s *Server) GetConns(uids ...string) []*websocket.Conn {
 	s.RWMutex.RLock()
 	defer s.RWMutex.RUnlock()
 
-	res := make([]*websocket.Conn, 0, len(uids))
+	res := make([]*HeartbeatConnection, 0, len(uids))
 	for _, uid := range uids {
 		res = append(res, s.userToConn[uid])
 	}
 	return res
 }
 
-func (s *Server) GetUsers(conns ...*websocket.Conn) []string {
+func (s *Server) GetUsers(conns ...*HeartbeatConnection) []string {
 	s.RWMutex.RLock()
 	defer s.RWMutex.RUnlock()
 
@@ -177,7 +181,7 @@ func (s *Server) GetUsers(conns ...*websocket.Conn) []string {
 
 // 关闭连接
 func (s *Server) Close(conn *HeartbeatConnection) {
-	uid := s.connToUser[conn.Conn]
+	uid := s.connToUser[conn]
 
 	err := conn.Close()
 	if err != nil {
@@ -186,7 +190,7 @@ func (s *Server) Close(conn *HeartbeatConnection) {
 	s.RWMutex.Lock()
 	defer s.RWMutex.RUnlock()
 
-	delete(s.connToUser, conn.Conn)
+	delete(s.connToUser, conn)
 	delete(s.userToConn, uid)
 }
 
@@ -200,7 +204,7 @@ func (s *Server) SendByUserId(msg any, sendIds ...string) error {
 }
 
 // 根据连接对象发送消息
-func (s *Server) Send(msg any, conns ...*websocket.Conn) error {
+func (s *Server) Send(msg any, conns ...*HeartbeatConnection) error {
 	if len(conns) == 0 {
 		return nil
 	}

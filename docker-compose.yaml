@@ -53,10 +53,36 @@ services:
     volumes:
       - mongodb-data:/data/db
 
+  zookeeper:
+    image: bitnami/zookeeper:3.8
+    container_name: gozero-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    volumes:
+      - zookeeper-data:/bitnami/zookeeper
+
+  kafka:
+    image: bitnami/kafka:3.6
+    container_name: gozero-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092 # 这里需要使用宿主机
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
+    volumes:
+      - kafka-data:/bitnami/kafka
+
 volumes:
   etcd-data:
   redis-data:
   mysql-data:
-#  mongodb-data:
-#  kafka-data:
-#  zookeeper-data:
+  mongodb-data:
+  kafka-data:
+  zookeeper-data:

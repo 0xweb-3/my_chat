@@ -3,3 +3,7 @@ ListenOn: 0.0.0.0:5555
 
 JwtAuth:
   AccessSecret: 3GpqJy2cBS4UuVXFRGArdeVLt4pyQypM
+
+Mongo:
+  Url: mongodb://root:xin-im@127.0.0.1:47017
+  Db: xin-im

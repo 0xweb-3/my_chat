@@ -77,4 +77,6 @@ CREATE DATABASE `user` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 10. v10.0.0 实现im心跳检测
    * v10.0.1 区分心跳消息和普通消息，并优化
    * v10.0.2 使用带心跳检测的连接
+11. v11.0.0 好友私聊，私聊数据存储、请求信息、实现私聊
+12. 
 

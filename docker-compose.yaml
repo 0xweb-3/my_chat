@@ -42,16 +42,16 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
 
-#  mongodb:
-#    image: mongo:6.0
-#    container_name: gozero-mongodb
-#    ports:
-#      - "37017:27017"
-#    environment:
-#      MONGO_INITDB_ROOT_USERNAME: root
-#      MONGO_INITDB_ROOT_PASSWORD: xin-im
-#    volumes:
-#      - mongodb-data:/data/db
+  mongodb:
+    image: mongo:6.0
+    container_name: gozero-mongodb
+    ports:
+      - "47017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: xin-im
+    volumes:
+      - mongodb-data:/data/db
 
 volumes:
   etcd-data:

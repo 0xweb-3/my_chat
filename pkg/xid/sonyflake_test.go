@@ -1,4 +1,4 @@
-package wuid
+package xid
 
 import (
 	"testing"

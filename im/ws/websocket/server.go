@@ -83,6 +83,9 @@ func (s *Server) ServerWs(w http.ResponseWriter, r *http.Request) {
 
 // 根据连接对象执行任务处理
 func (s *Server) handlerConn(conn *HeartbeatConnection) {
+	uids := s.GetUsers(conn)
+	conn.Uid = uids[0]
+
 	for { // 避免执行一次处理就完毕
 		// 获取请求消息
 		_, msg, err := conn.ReadMessage()

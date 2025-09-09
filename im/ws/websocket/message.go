@@ -23,7 +23,7 @@ type Message struct {
 	FrameType `json:"frameType"` // 消息类型，是不是心跳消息和普通消息
 	Method    string             `json:"method"` // 具体要调用的方法
 	FromID    string             `json:"fromID"` // 消息的请求来源，用于服务方发送到客户方使用
-	Data      any                `json:"data"`   // 用户传递的数据
+	Data      any                `json:"data"`   // 用户传递的数据 // map[string]any
 }
 
 func NewMessage(fromId string, data any) *Message {

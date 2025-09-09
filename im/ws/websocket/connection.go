@@ -14,6 +14,7 @@ type HeartbeatConnection struct {
 	idle              time.Time     // 最后活跃时间
 	maxConnectionIdle time.Duration // 最大连接时间
 	done              chan struct{}
+	Uid               string
 }
 
 func NewHeartbeatConnection(s *Server, w http.ResponseWriter, r *http.Request) *HeartbeatConnection {

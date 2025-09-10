@@ -86,4 +86,10 @@ kafka-console-producer.sh --broker-list 127.0.0.1:9092 --topic msgChatTransfer
     * v10.0.2 使用带心跳检测的连接
 11. v11.0.0 好友私聊，私聊数据存储、请求信息、实现私聊
 12. v12.0.0 使用kafka构建异步消费服务
+13. v13.0.0 基于kafka异步数据存储落地及消息通信
+    * 构建好websocket客户端 
+    * 超级token验证，mq中的服务业务
+    * websocket将接收消息写入消息队列
+14. 
+
 

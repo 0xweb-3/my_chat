@@ -3,8 +3,11 @@ package svc
 import (
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
+	"my_chat/pkg/constants"
+	"my_chat/pkg/ctxdata"
 	"my_chat/user/rpc/internal/config"
 	"my_chat/user/rpc/models"
+	"time"
 )
 
 type ServiceContext struct {
@@ -22,4 +25,15 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Redis:      redis.MustNewRedis(c.Redisx),
 		UsersModel: models.NewUsersModel(sqlConn, c.Cache),
 	}
+}
+
+// 设置一个全局的jwt Token
+func (svc *ServiceContext) SetRootToken() error {
+	// 生成jwt token
+	systemToken, err := ctxdata.GetJwtToken(svc.Config.Jwt.AccessSecret, time.Now().Unix(), 999999999, constants.SYSTEM_ROOT_UID)
+	if err != nil {
+		return err
+	}
+	// 写入到redis
+	return svc.Redis.Set(string(constants.ROOT_TOKEN), systemToken)
 }

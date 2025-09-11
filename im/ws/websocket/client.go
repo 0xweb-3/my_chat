@@ -39,7 +39,7 @@ func NewClient(host string, opts ...ClientOptions) *client {
 // 建立与websocket的连接
 func (c *client) dail() (*websocket.Conn, error) {
 	u := url.URL{Scheme: "ws", Host: c.host, Path: c.opt.patten}
-	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), c.opt.header)
 	return conn, err
 }
 

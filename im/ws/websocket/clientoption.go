@@ -6,7 +6,7 @@ type ClientOptions func(option *clientOption)
 
 type clientOption struct {
 	patten string
-	header http.Handler
+	header http.Header
 }
 
 func newClientOptions(opts ...ClientOptions) clientOption {

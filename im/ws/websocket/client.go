@@ -53,8 +53,8 @@ func (c *client) Send(v any) error {
 		return err
 	}
 	err = c.WriteMessage(websocket.TextMessage, data)
-	if err != nil {
-		return err
+	if err == nil { // 没有错直接返回
+		return nil
 	}
 	// todo 这里可以重连发送
 	conn, err := c.dail()

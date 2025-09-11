@@ -20,3 +20,15 @@ type Chat struct {
 
 	constants.ChatType `mapstructure:"chatType"`
 }
+
+// 向kafka中推送的消息结构
+type PushMessage struct {
+	ConversationID     string `mapstructure:"conversationID"` // 会话id
+	SendId             string `mapstructure:"sendId"`         // 发送方
+	ReceiveId          string `mapstructure:"receiveId"`      // 接收方
+	constants.ChatType `mapstructure:"chatType"`
+	SendTime           int64 `mapstructure:"sendTime"`
+
+	constants.MessageType `mapstructure:"messageType"`
+	Content               string `mapstructure:"content"`
+}

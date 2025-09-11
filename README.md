@@ -89,7 +89,7 @@ kafka-console-producer.sh --broker-list 127.0.0.1:9092 --topic msgChatTransfer
 13. v13.0.0 基于kafka异步数据存储落地及消息通信
     * v13.0.1 构建好websocket客户端 
     * v13.0.2 超级token验证，mq中的服务业务
-    * websocket将接收消息写入消息队列
+    * v13.0.2 push消息到客户端，websocket将接收消息写入消息队列
 14. 
 
 

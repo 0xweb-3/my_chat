@@ -7,3 +7,8 @@ JwtAuth:
 Mongo:
   Url: mongodb://root:xin-im@127.0.0.1:47017
   Db: xin-im
+
+MsgChatTransfer:
+  Topic: MsgChatTransfer
+  Address:
+    - 127.0.0.1:9092

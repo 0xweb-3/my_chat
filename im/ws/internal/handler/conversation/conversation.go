@@ -1,9 +1,8 @@
 package conversation
 
 import (
-	"context"
 	"github.com/mitchellh/mapstructure"
-	"my_chat/im/ws/internal/logic"
+	"my_chat/im/task/mq/mq"
 	"my_chat/im/ws/internal/svc"
 	"my_chat/im/ws/websocket"
 	"my_chat/im/ws/ws"
@@ -22,26 +21,40 @@ func Chat(svc *svc.ServiceContext) websocket.HandlerFunc {
 		// 消息进行处理
 		switch data.ChatType {
 		case constants.SingleChatType: // 私聊
-			err := logic.NewConversation(context.Background(), srv, svc).SingleChat(data, conn.Uid)
-			if err != nil {
-				srv.Send(websocket.NewErrMessage(err), conn)
-				return
-			}
-			err = srv.SendByUserId(websocket.NewMessage(conn.Uid, ws.Chat{
+			// 推送到kafka中
+			err := svc.MqClinet.Push(&mq.MsgChatTransfer{
 				ConversationID: data.ConversationID,
-				SendId:         conn.Uid,
+				SendId:         data.SendId,
 				ReceiveId:      data.ReceiveId,
-				Message:        data.Message,
-				SendTime:       data.SendTime,
 				ChatType:       data.ChatType,
-			}), data.ReceiveId)
-
-			if err != nil {
-				srv.Errorf("Chat err = %v", err)
-			}
+				SendTime:       data.SendTime,
+				MessageType:    data.Message.MessageType,
+				Content:        data.Message.Content,
+			})
 			srv.Send(websocket.NewErrMessage(err), conn)
 			return
 		}
+
+		//err := logic.NewConversation(context.Background(), srv, svc).SingleChat(data, conn.Uid)
+		//if err != nil {
+		//	srv.Send(websocket.NewErrMessage(err), conn)
+		//	return
+		//}
+		//err = srv.SendByUserId(websocket.NewMessage(conn.Uid, ws.Chat{
+		//	ConversationID: data.ConversationID,
+		//	SendId:         conn.Uid,
+		//	ReceiveId:      data.ReceiveId,
+		//	Message:        data.Message,
+		//	SendTime:       data.SendTime,
+		//	ChatType:       data.ChatType,
+		//}), data.ReceiveId)
+		//
+		//if err != nil {
+		//	srv.Errorf("Chat err = %v", err)
+		//}
+		//srv.Send(websocket.NewErrMessage(err), conn)
+		//return
+		//}
 
 	}
 }

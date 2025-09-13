@@ -104,6 +104,8 @@ func (s *Server) handlerConn(conn *HeartbeatConnection) {
 			return
 		}
 
+		// todo 给客户端回复一个ack
+
 		// 根据不同消息类型进行处理
 		switch message.FrameType {
 		case FramePing:
@@ -126,6 +128,16 @@ func (s *Server) handlerConn(conn *HeartbeatConnection) {
 		//	conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("不存在执行的方法%v请检查", message.Method)))
 		//}
 	}
+}
+
+// 对发送过来消息对ack确认
+func (s *Server) readAck() {
+
+}
+
+// ack确认后的任务处理
+func (s *Server) handlerWrite() {
+
 }
 
 // 将路由注册进来

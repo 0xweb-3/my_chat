@@ -60,6 +60,7 @@ CREATE DATABASE `user` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 建议将tag拉取到本地，用IDE工具进行版本之间对比参照
 
 ## kafka
+
 ```shell
 kafka-console-producer.sh --broker-list 127.0.0.1:9092 --topic msgChatTransfer
 ```
@@ -87,9 +88,11 @@ kafka-console-producer.sh --broker-list 127.0.0.1:9092 --topic msgChatTransfer
 11. v11.0.0 好友私聊，私聊数据存储、请求信息、实现私聊
 12. v12.0.0 使用kafka构建异步消费服务
 13. v13.0.0 基于kafka异步数据存储落地及消息通信
-    * v13.0.1 构建好websocket客户端 
+    * v13.0.1 构建好websocket客户端
     * v13.0.2 超级token验证，mq中的服务业务
-    * v13.0.2 push消息到客户端，websocket将接收消息写入消息队列
-14. 
+    * v13.0.3 push消息到客户端，websocket将接收消息写入消息队列
+14. v14.0.0 实现消息的ack机制
+    * v14.0.1 options配置与消息属性
+15. 
 
 

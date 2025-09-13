@@ -15,6 +15,13 @@ type HeartbeatConnection struct {
 	maxConnectionIdle time.Duration // 最大连接时间
 	done              chan struct{}
 	Uid               string
+
+	// 读消息读队列
+	messageMu      sync.Mutex
+	readMessage    []*Message          // 表示发送过来已经被读取
+	readMessageSeq map[string]*Message // 序列化后的被读取的消息
+	message        chan *Message       // ack确认消息完成，并将消息交给任务处理的通知
+
 }
 
 func NewHeartbeatConnection(s *Server, w http.ResponseWriter, r *http.Request) *HeartbeatConnection {
@@ -30,6 +37,10 @@ func NewHeartbeatConnection(s *Server, w http.ResponseWriter, r *http.Request) *
 		idle:              time.Now(),
 		maxConnectionIdle: s.opt.maxConnectionIdle,
 		done:              make(chan struct{}),
+
+		readMessage:    make([]*Message, 0, 2),
+		readMessageSeq: make(map[string]*Message, 2),
+		message:        make(chan *Message, 1), // 减少阻塞，并保证顺序性
 	}
 
 	// 执行心跳检测

@@ -10,6 +10,25 @@ import (
 	"sync"
 )
 
+type AckType int
+
+const (
+	NoAck    AckType = iota // 不进行ack的确认
+	OnceAck                 // 进行一次确认
+	RigorAck                // 进行严格的确认
+)
+
+func (a AckType) ToString() string {
+	switch a {
+	case OnceAck:
+		return "OnceAck"
+	case RigorAck:
+		return "RigorAck"
+	}
+
+	return "NoAck"
+}
+
 type Server struct {
 	patten       string
 	sync.RWMutex // 保证连接对象在使用过程中是线程安全的

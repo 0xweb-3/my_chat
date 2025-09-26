@@ -92,7 +92,7 @@ kafka-console-producer.sh --broker-list 127.0.0.1:9092 --topic msgChatTransfer
     * v13.0.2 超级token验证，mq中的服务业务
     * v13.0.3 push消息到客户端，websocket将接收消息写入消息队列
 14. v14.0.0 实现消息的ack机制,基础结构
-    * v14.0.1 options配置与消息属性
+    * v14.0.1 ack options配置与消息属性
     * v14.0.2 实现ack机制
 15. 
 

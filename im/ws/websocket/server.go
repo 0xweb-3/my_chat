@@ -282,6 +282,13 @@ func (s *Server) handlerWrite(conn *HeartbeatConnection) {
 					s.Send(&Message{FrameType: FrameData, Data: fmt.Sprintf("不存在的执行方法请检查:%s", message.Method)}, conn)
 				}
 			}
+
+			if s.isAck(message) {
+				// 处理完成后的消息清理
+				conn.messageMu.Lock()
+				delete(conn.readMessageSeq, message.Id)
+				conn.messageMu.Unlock()
+			}
 		}
 	}
 }

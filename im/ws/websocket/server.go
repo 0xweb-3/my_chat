@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/websocket"
-	"github.com/zeromicro/go-zero/core/logx"
 	"net/http"
 	"sync"
+	"time"
+
+	"github.com/gorilla/websocket"
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type AckType int
@@ -75,11 +77,11 @@ func (s *Server) ServerWs(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	// 得到连接对象
-	//conn, err := s.upgrader.Upgrade(w, r, nil)
-	//if err != nil {
+	// conn, err := s.upgrader.Upgrade(w, r, nil)
+	// if err != nil {
 	//	s.Errorf("upgrade err %v", err)
 	//	return
-	//}
+	// }
 	conn := NewHeartbeatConnection(s, w, r)
 	if conn == nil {
 		return
@@ -105,6 +107,14 @@ func (s *Server) handlerConn(conn *HeartbeatConnection) {
 	uids := s.GetUsers(conn)
 	conn.Uid = uids[0]
 
+	// 处理任务
+	go s.handlerWrite(conn)
+
+	// 如果开启了ack
+	if s.opt.ack != NoAck {
+		go s.readAck(conn)
+	}
+
 	for { // 避免执行一次处理就完毕
 		// 获取请求消息
 		_, msg, err := conn.ReadMessage()
@@ -114,8 +124,8 @@ func (s *Server) handlerConn(conn *HeartbeatConnection) {
 			return
 		}
 
-		//使用goroutine消息是并发处理的 → 可能导致顺序错乱（客户端按顺序发的消息，处理顺序就无法保证）。
-		//如果客户端发很多消息，可能会短时间内启动大量 goroutine，占用资源。
+		// 使用goroutine消息是并发处理的 → 可能导致顺序错乱（客户端按顺序发的消息，处理顺序就无法保证）。
+		// 如果客户端发很多消息，可能会短时间内启动大量 goroutine，占用资源。
 		var message Message
 		if err = json.Unmarshal(msg, &message); err != nil {
 			s.Errorf("json unmarshal err %v, msg %v", err, string(msg))
@@ -125,38 +135,155 @@ func (s *Server) handlerConn(conn *HeartbeatConnection) {
 
 		// todo 给客户端回复一个ack
 
-		// 根据不同消息类型进行处理
-		switch message.FrameType {
-		case FramePing:
-			// 针对ping消息回复ping消息
-			s.Send(&Message{FrameType: FramePing}, conn)
-		case FrameData:
-			// 普通数据响应
-			if handler, ok := s.routes[message.Method]; ok {
-				handler(s, conn, &message)
-			} else {
-				s.Send(&Message{FrameType: FrameData, Data: fmt.Sprintf("不存在执行的方法%v请检查", message.Method)}, conn)
-			}
+		// 依据消息类型进行处理
+		if s.isAck(&message) {
+			s.Infof("conn message read ack msg %v", message)
+			conn.appendMsgMq(&message)
+		} else {
+			conn.message <- &message
 		}
 
-		//// 根据请求中的method分发路由并执行
-		//if handler, ok := s.routes[message.Method]; ok {
+		// 根据不同消息类型进行处理
+		// switch message.FrameType {
+		// case FramePing:
+		// 	// 针对ping消息回复ping消息
+		// 	s.Send(&Message{FrameType: FramePing}, conn)
+		// case FrameData:
+		// 	// 普通数据响应
+		// 	if handler, ok := s.routes[message.Method]; ok {
+		// 		handler(s, conn, &message)
+		// 	} else {
+		// 		s.Send(&Message{FrameType: FrameData, Data: fmt.Sprintf("不存在执行的方法%v请检查", message.Method)}, conn)
+		// 	}
+		// }
+
+		// // 根据请求中的method分发路由并执行
+		// if handler, ok := s.routes[message.Method]; ok {
 		//	handler(s, conn, &message)
-		//} else {
+		// } else {
 		//	// 没有对应处理方式
 		//	conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("不存在执行的方法%v请检查", message.Method)))
-		//}
+		// }
 	}
 }
 
-// 对发送过来消息对ack确认
-func (s *Server) readAck() {
+func (s *Server) isAck(message *Message) bool {
+	if message == nil {
+		return s.opt.ack == NoAck
+	}
+	return s.opt.ack != NoAck && message.FrameType == FrameNoAck
+}
 
+// 对发送过来消息对ack确认
+func (s *Server) readAck(conn *HeartbeatConnection) {
+	for {
+		select {
+		case <-conn.done:
+			s.Infof("close message ack uid %v", conn.Uid)
+			return
+		default:
+		}
+		// 从队列中读取新的消息
+		conn.messageMu.Lock()
+		if len(conn.readMessage) == 0 {
+			conn.messageMu.Unlock()
+			// 增加睡眠
+			time.Sleep(time.Millisecond * 100)
+			continue
+		}
+
+		// 读取第一条消息
+		message := conn.readMessage[0]
+
+		// 判断ack的方式
+		switch s.opt.ack {
+		case OnceAck:
+			// 只执行一次应答，直接给客户端回复
+			s.Send(&Message{
+				Id:        message.Id,
+				FrameType: FrameAck,
+				AckSeq:    message.AckSeq + 1,
+				AckTime:   time.Now(),
+			}, conn)
+			// 进行业务处理
+			conn.readMessage = conn.readMessage[1:] // 移除已经确认消息
+			conn.messageMu.Unlock()
+			// 进行业务处理
+			conn.message <- message
+		case RigorAck:
+			// 执行完整的应答
+			// 1. 先回复
+			if message.AckSeq == 0 {
+				// 还未确认
+				conn.readMessage[0].AckSeq++
+				conn.readMessage[0].AckTime = time.Now()
+				s.Send(&Message{
+					Id:        message.Id,
+					FrameType: FrameAck,
+					AckSeq:    message.AckSeq,
+					AckTime:   message.AckTime,
+				}, conn)
+				s.Infof("message ack RigorAck send, msgId=%v, seq=%v, time=%v", message.Id, message.AckSeq, message.AckTime)
+				conn.messageMu.Unlock()
+				continue
+			}
+
+			// 2. 再验证
+			// 2.1 客户端返回结果，再一次确认
+			msgseq := conn.readMessageSeq[message.Id] // 客户端的序号
+			if msgseq.AckSeq > message.AckSeq {
+				// 已经确认
+				conn.readMessage = conn.readMessage[1:] // 移除已经确认消息
+				conn.messageMu.Unlock()
+				// 进行业务处理
+				conn.message <- message
+				s.Infof("message ack RigorAck success mid %v", message.Id)
+				continue
+			}
+
+			// 2.2 客户端没有确认，考虑超过ack的确认时间
+			val := s.opt.ackTimeout - time.Since(msgseq.AckTime)
+			if !message.AckTime.IsZero() && val <= 0 {
+				// 2.2.2 超过，结束确认
+				delete(conn.readMessageSeq, message.Id)
+				conn.readMessage = conn.readMessage[1:] // 移除已经确认消息
+				conn.messageMu.Unlock()
+				continue
+			}
+			// 2.2.1 未超过重新发送
+			conn.messageMu.Unlock()
+			s.Send(&Message{
+				Id:        message.Id,
+				FrameType: FrameAck,
+				AckSeq:    message.AckSeq,
+				AckTime:   message.AckTime,
+			}, conn)
+
+			time.Sleep(time.Millisecond * 100)
+		}
+	}
 }
 
 // ack确认后的任务处理
-func (s *Server) handlerWrite() {
-
+func (s *Server) handlerWrite(conn *HeartbeatConnection) {
+	for {
+		select {
+		case <-conn.done: // 连接关闭
+			return
+		case message := <-conn.message: // 新消息
+			switch message.FrameType {
+			case FramePing:
+				s.Send(&Message{FrameType: FramePing}, conn)
+			case FrameData:
+				// 根据请求的method分发路由并执行
+				if handler, ok := s.routes[message.Method]; ok {
+					handler(s, conn, message)
+				} else {
+					s.Send(&Message{FrameType: FrameData, Data: fmt.Sprintf("不存在的执行方法请检查:%s", message.Method)}, conn)
+				}
+			}
+		}
+	}
 }
 
 // 将路由注册进来

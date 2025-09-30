@@ -1,10 +1,11 @@
 package websocket
 
 import (
-	"github.com/gorilla/websocket"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 type HeartbeatConnection struct {
@@ -47,6 +48,38 @@ func NewHeartbeatConnection(s *Server, w http.ResponseWriter, r *http.Request) *
 	go conn.keepalive()
 
 	return conn
+}
+
+// 将消息添加到队列中
+func (c *HeartbeatConnection) appendMsgMq(msg *Message) {
+	c.messageMu.Lock()
+	defer c.messageMu.Unlock()
+	// 判断已经存在
+	if m, ok := c.readMessageSeq[msg.Id]; ok {
+		// 消息记录已经存在，有ack确认过程
+		if len(c.readMessage) == 0 {
+			// 消息队列里没有消息
+			return
+		}
+
+		// msg.AckSeq >= m.AckSeq 还没进行ack确认
+		if msg.AckSeq >= m.AckSeq {
+			// 还没有进行ack确认，重复发送
+			return
+		}
+
+		// 进行序号的更新
+		c.readMessageSeq[msg.Id] = msg
+		return
+	}
+
+	// 还没有进行ack确认，可能收到多条ack消息
+	if msg.FrameType == FrameAck {
+		return
+	}
+	// 将消息记录到队列中
+	c.readMessage = append(c.readMessage, msg)
+	c.readMessageSeq[msg.Id] = msg
 }
 
 func (c *HeartbeatConnection) keepalive() {

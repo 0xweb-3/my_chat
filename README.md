@@ -94,6 +94,11 @@ kafka-console-producer.sh --broker-list 127.0.0.1:9092 --topic msgChatTransfer
 14. v14.0.0 实现消息的ack机制,基础结构
     * v14.0.1 ack options配置与消息属性
     * v14.0.2 实现ack机制
-15. 
+15. v15.0.0 用户拉取离线消息
+    * v15.0.1 完成im-rpc服务的功能开发
+    * v15.0.2 任务新增消息记录
+    * v15.0.3 完成im-api服务的功能开发
+
+
 
 

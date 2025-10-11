@@ -65,6 +65,15 @@ CREATE DATABASE `user` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 kafka-console-producer.sh --broker-list 127.0.0.1:9092 --topic msgChatTransfer
 ```
 
+## mongodb 数据模型构建
+先构建文件
+```shell
+goctl model mongo --type conversations --dir ./im/immodels/
+goctl model mongo --type conversation --dir ./im/immodels/
+```
+再修改模型即可
+
+
 1. v1.0.0 完成im基本服务框架结构搭建 ✅
 2. v2.0.0 完成消息的路由分发 ✅
 3. v3.0.0 存储连接对象及设计鉴权 ✅

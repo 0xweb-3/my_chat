@@ -105,8 +105,7 @@ goctl model mongo --type conversation --dir ./im/immodels/
     * v14.0.2 实现ack机制
 15. v15.0.0 用户拉取离线消息
     * v15.0.1 完成im-rpc服务的功能开发
-    * v15.0.2 任务新增消息记录
-    * v15.0.3 完成im-api服务的功能开发
+
 
 
 

@@ -90,7 +90,7 @@ goctl model mongo --type conversation --dir ./im/immodels/
     * v8.0.1 增加rpc用户手机号、密码加密、雪花id、jwt、注册登录的业务 ✅
     * v8.0.2 完善user api服务、完成登录注册功能、用户详情 ✅
     * v8.0.3 优化响应输出，api错误码的统一处理 ✅
-9. v9.0.0 实现im服务用户登入连接，鉴权(将im/ws/websocket/authentication.go按jwt方式替换)
+9. v9.0.0 实现im服务用户登入连接，鉴权(将im/ws/websocket/authentication.go按jwt方式替换) ✅
 10. v10.0.0 实现im心跳检测
     * v10.0.1 区分心跳消息和普通消息，并优化
     * v10.0.2 使用带心跳检测的连接
